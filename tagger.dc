@@ -1,3 +1,5 @@
+import RootObject/UD
+import TagAvatarManager/UD
 import TagManager/AI
 import TagGame/AI
 import TagPlayer/AI
@@ -30,8 +32,15 @@ struct ArtPainting {
   blob data;
 };
 
+dclass RootObject : DistributedObject {
+};
+
+dclass TagAvatarManager : DistributedObject {
+  requestAvatar(string name) clsend airecv;
+};
+
 dclass TagManager : TimeManager {
-  requestNewGame() clsend;
+  requestNewGame() clsend airecv;
   setSuggestedGameId(uint32 gameId) broadcast ram required;
 };
 

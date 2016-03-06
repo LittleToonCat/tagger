@@ -1,5 +1,6 @@
-from direct.distributed.ClientRepository import ClientRepository
+from direct.distributed.AstronInternalRepository import AstronInternalRepository
 from pandac.PandaModules import *
+from TagManagerAI import TagManagerAI
 from TagGameAI import TagGameAI
 from TagPlayerAI import TagPlayerAI
 import Globals
@@ -8,16 +9,15 @@ import os
 import cPickle
 from cStringIO import StringIO
 
-class TagAIRepository(ClientRepository):
-    def __init__(self, threadedNet = True):
+class TagAIRepository(AstronInternalRepository):
+    def __init__(self, baseChannel, serverId, threadedNet = True):
         dcFileNames = ['direct.dc', 'tagger.dc']
 
-        ClientRepository.__init__(self, dcFileNames = dcFileNames,
+        self.GameGlobalsId = 1000
+
+        AstronInternalRepository.__init__(self, baseChannel, serverId, dcFileNames = dcFileNames,
                                   dcSuffix = 'AI', connectMethod = self.CM_NET,
                                   threadedNet = threadedNet)
-
-        # Need at least 32 bits to receive big picture packets.
-        self.setTcpHeaderSize(4)
 
         # Allow some time for other processes.
         base.setSleep(0.01)
@@ -29,22 +29,22 @@ class TagAIRepository(ClientRepository):
 
         self.games = []
 
-        tcpPort = base.config.GetInt('server-port', Globals.ServerPort)
-        hostname = base.config.GetString('server-host', Globals.ServerHost)
-        if not hostname:
-            hostname = 'localhost'
-        url = URLSpec('g://%s:%s' % (hostname, tcpPort))
-        self.connect([url],
-                     successCallback = self.connectSuccess,
-                     failureCallback = self.connectFailure)
+        self.managerId = self.allocateChannel()
 
-    def connectFailure(self, statusCode, statusString):
-        raise StandardError, statusString
+        tcpPort = base.config.GetInt('ai-server-port', 7190)
+        hostname = base.config.GetString('ai-server-host', '127.0.0.1')
+        self.acceptOnce('airConnected', self.connectSuccess)
+        self.connect(hostname, tcpPort)
+
 
     def connectSuccess(self):
-        """ Successfully connected.  But we still can't really do
-        anything until we've got the doID range. """
-        self.accept('createReady', self.gotCreateReady)
+        """ Successfully connected to the Message Director.
+            Now to generate the TagManagerAI """
+        print 'Connected to MD'
+
+        self.timeManager = TagManagerAI(self)
+        self.timeManager.generateWithRequiredAndId(self.managerId, self.GameGlobalsId, 1)
+        #self.accept('createReady', self.gotCreateReady)
 
     def lostConnection(self):
         # This should be overridden by a derived class to handle an
@@ -63,8 +63,6 @@ class TagAIRepository(ClientRepository):
         # Put the TagManager in zone 1 where the clients can find it.
         self.timeManager = self.createDistributedObject(
             className = 'TagManagerAI', zoneId = 1)
-
-        self.zoneAllocator = UniqueIdAllocator(3, 1000000)
 
         #self.makeGame(self.allocateDoId())
 

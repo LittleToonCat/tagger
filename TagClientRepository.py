@@ -17,8 +17,6 @@ import random
 import math
 import os
 
-GameGlobalsId = 1000
-
 # Using ClientRepositoryBase since AstronClientRepository
 # is not finished and possibly not usable yet.
 class TagClientRepository(ClientRepositoryBase):
@@ -37,6 +35,10 @@ class TagClientRepository(ClientRepositoryBase):
         ClientRepositoryBase.__init__(self, dcFileNames = dcFileNames,
                                   connectMethod = self.CM_NET,
                                   threadedNet = threadedNet)
+
+        self.GameGlobalsId = 1000
+
+        self.avatarManager = self.generateGlobalObject(1001, 'TagAvatarManager')
 
         base.transitions.FadeModelName = 'models/fade'
 
@@ -344,6 +346,7 @@ class TagClientRepository(ClientRepositoryBase):
 
     def handleHelloResp(self):
         self.startHeartbeat()
+        self.avatarManager.requestAvatar(self.playerName)
 
     def sendHeartbeat(self):
         dg = PyDatagram()

@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 usageText = """
 Usage:
@@ -8,8 +8,14 @@ Usage:
 Options:
 
   -s Run a server
-  -a Run an AI
+
+  -a baseChannel
+     Run an AI
+
+  -u Run an UD
+
   -c Run a client
+
   -r name
      Run a robot client
 
@@ -36,12 +42,12 @@ def usage(code, msg = ''):
     sys.exit(code)
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 'sacr:tp:l:h')
+    opts, args = getopt.getopt(sys.argv[1:], 'uacr:tp:l:h')
 except getopt.error, msg:
     usage(1, msg)
 
-runServer = False
 runAI = False
+runUD = False
 runClient = False
 runRobot = False
 robotName = 'robot'
@@ -49,10 +55,15 @@ logFilename = None
 threadedNet = True
 
 for opt, arg in opts:
-    if opt == '-s':
-        runServer = True
+    if opt == "-u":
+        runUD = True
     elif opt == '-a':
         runAI = True
+        serverId = 402000
+        if arg:
+            baseChannel = arg
+        else:
+            baseChannel = 101000000
     elif opt == '-c':
         runClient = True
     elif opt == '-r':
@@ -71,7 +82,7 @@ for opt, arg in opts:
     elif opt == '-h':
         usage(0)
     else:
-        print 'illegal option: ' + flag
+        print 'illegal options: ' + flag
         sys.exit(1)
 
 if logFilename:
@@ -89,10 +100,9 @@ if logFilename:
     # Since we're writing to a log file, turn on timestamping.
     loadPrcFileData('', 'notify-timestamp 1')
 
-if not runServer and not runAI and not runClient and not runRobot:
+if not runAI and not runClient and not runRobot and not runUD:
     runClient = True
     #runAI = True
-    #runServer = True
 
 if not runClient:
     # Don't open a graphics window on the server.  (Open a window only
@@ -101,13 +111,14 @@ if not runClient:
     loadPrcFileData('', 'window-type none\naudio-library-name null')
 
 from direct.directbase.DirectStart import *
-if runServer:
-    from TagServerRepository import TagServerRepository
-    base.server = TagServerRepository(threadedNet = threadedNet)
 
 if runAI:
     from TagAIRepository import TagAIRepository
-    base.air = TagAIRepository(threadedNet = threadedNet)
+    base.air = TagAIRepository(baseChannel, serverId, threadedNet = threadedNet)
+
+if runUD:
+    from TagUDRepository import TagUDRepository
+    base.air = TagUDRepository(threadedNet = threadedNet)
 
 if runRobot:
     from TagClientRepository import TagClientRepository

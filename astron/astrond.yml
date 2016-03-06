@@ -8,14 +8,23 @@ general:
 messagedirector:
     bind: 127.0.0.1:7190
 
+# The Uberdog section describes the existence of UberDOGs, which are objects
+#     that are assumed to exist statically.
+uberdogs:
+  - id: 1001
+    class: TagAvatarManager
+    # Anonymous specifies whether an uberdog can be accessed through
+    #     the ClientAgent from an unauthenticated client.
+    anonymous: true
+
 # The Roles section allows specifying roles that we would like this daemon to perform.
 roles:
-    # For example, let's have a client agent which listens on port 7198 on all interfaces:
+    # For example, let's have a client agent which listens on port 4430 on all interfaces:
     - type: clientagent
       bind: 0.0.0.0:4430
       # Manual_dc_hash tells the server what DC hash version to expect from the client.
       #     This is mostly used if the DC parser used by the client doesn't have hash parity
-      #     with the parser used by Astron. (Panda3D users will currently need to enable this).
+      #     with the parser used by Astron.
       #manual_dc_hash: 0xABCD1234
       version: "tagger-dev"
 

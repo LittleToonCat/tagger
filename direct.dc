@@ -31,12 +31,12 @@ dclass TimeManager: DistributedObject {
 };
 
 dclass DistributedNode: DistributedObject {
-  setX(int16 / 10) broadcast ram;
-  setY(int16 / 10) broadcast ram;
-  setZ(int16 / 10) broadcast ram;
-  setH(int16 % 360 / 10) broadcast ram;
-  setP(int16 % 360 / 10) broadcast ram;
-  setR(int16 % 360 / 10) broadcast ram;
+  setX(int16 / 10) broadcast ram ownsend;
+  setY(int16 / 10) broadcast ram ownsend;
+  setZ(int16 / 10) broadcast ram ownsend;
+  setH(int16 % 360 / 10) broadcast ram ownsend;
+  setP(int16 % 360 / 10) broadcast ram ownsend;
+  setR(int16 % 360 / 10) broadcast ram ownsend;
 
   setPos: setX, setY, setZ;
   setHpr: setH, setP, setR;
@@ -50,14 +50,14 @@ dclass DistributedNode: DistributedObject {
 dclass DistributedSmoothNode: DistributedNode {
   // Component set pos and hpr functions.
 
-  setComponentL(uint64) broadcast ram;
-  setComponentX(int16 / 10) broadcast ram;
-  setComponentY(int16 / 10) broadcast ram;
-  setComponentZ(int16 / 10) broadcast ram;
-  setComponentH(int16 % 360 / 10) broadcast ram;
-  setComponentP(int16 % 360 / 10) broadcast ram;
-  setComponentR(int16 % 360 / 10) broadcast ram;
-  setComponentT(int16 timestamp) broadcast ram;
+  setComponentL(uint64) broadcast ram ownsend;
+  setComponentX(int16 / 10) broadcast ram ownsend;
+  setComponentY(int16 / 10) broadcast ram ownsend;
+  setComponentZ(int16 / 10) broadcast ram ownsend;
+  setComponentH(int16 % 360 / 10) broadcast ram ownsend;
+  setComponentP(int16 % 360 / 10) broadcast ram ownsend;
+  setComponentR(int16 % 360 / 10) broadcast ram ownsend;
+  setComponentT(int16 timestamp) broadcast ram ownsend;
 
   // Composite set pos and hpr functions.  These map to combinations
   // of one or more of the above components.  They all include
