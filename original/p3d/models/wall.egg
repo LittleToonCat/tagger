@@ -1,0 +1,192 @@
+<CoordinateSystem> { Z-Up }
+
+<Texture> brick_n {
+  brick-n.jpg
+  <Scalar> format { rgb }
+  <Scalar> wrapu { repeat }
+  <Scalar> wrapv { repeat }
+  <Scalar> minfilter { linear_mipmap_linear }
+  <Scalar> magfilter { linear }
+  <Scalar> envtype { normal }
+  <Transform> {
+    <Scale> { 2 2.5 }
+  }
+}
+<Texture> brick {
+  brick-c.jpg
+  <Scalar> format { rgb }
+  <Scalar> wrapu { repeat }
+  <Scalar> wrapv { repeat }
+  <Scalar> minfilter { linear_mipmap_linear }
+  <Scalar> magfilter { linear }
+  <Transform> {
+    <Scale> { 2 2.5 }
+  }
+}
+<VertexPool> wall {
+  <Vertex> 0 {
+    -0.5 0.45 0
+    <UV> {
+      0 0
+      <Tangent> { 1 0 0 }
+      <Binormal> { 0 0 1 }
+    }
+    <UV> paint { 0 0 }
+  }
+  <Vertex> 1 {
+    -0.5 0.45 1
+    <UV> {
+      0 1
+      <Tangent> { 1 0 0 }
+      <Binormal> { 0 0 1 }
+    }
+    <UV> paint { 0 1 }
+  }
+  <Vertex> 2 {
+    0.5 0.45 0
+    <UV> {
+      1 0
+      <Tangent> { 1 0 0 }
+      <Binormal> { 0 0 1 }
+    }
+    <UV> paint { 1 0 }
+  }
+  <Vertex> 3 {
+    0.5 0.45 1
+    <UV> {
+      1 1
+      <Tangent> { 1 0 0 }
+      <Binormal> { 0 0 1 }
+    }
+    <UV> paint { 1 1 }
+  }
+  <Vertex> 4 {
+    -0.5 0.45 0
+    <UV> {
+      0.1 0
+      <Tangent> { 0 1 0 }
+      <Binormal> { 0 0 1 }
+    }
+    <UV> paint { 0 0 }
+  }
+  <Vertex> 5 {
+    -0.5 0.45 1
+    <UV> {
+      0.1 1
+      <Tangent> { 0 1 0 }
+      <Binormal> { 0 0 1 }
+    }
+    <UV> paint { 0 1 }
+  }
+  <Vertex> 6 {
+    -0.5 0.5 0
+    <UV> {
+      0.15 0
+      <Tangent> { 0 1 0 }
+      <Binormal> { 0 0 1 }
+    }
+    <UV> paint { 0.05 0 }
+  }
+  <Vertex> 7 {
+    -0.5 0.5 1
+    <UV> {
+      0.15 1
+      <Tangent> { 0 1 0 }
+      <Binormal> { 0 0 1 }
+    }
+    <UV> paint { 0.05 1 }
+  }
+  <Vertex> 8 {
+    0.5 0.45 0
+    <UV> {
+      0.2 0
+      <Tangent> { 0 -1 0 }
+      <Binormal> { 0 0 1 }
+    }
+    <UV> paint { 1 0 }
+  }
+  <Vertex> 9 {
+    0.5 0.45 1
+    <UV> {
+      0.2 1
+      <Tangent> { 0 -1 0 }
+      <Binormal> { 0 0 1 }
+    }
+    <UV> paint { 1 1 }
+  }
+  <Vertex> 10 {
+    0.5 0.5 0
+    <UV> {
+      0.15 0
+      <Tangent> { 0 -1 0 }
+      <Binormal> { 0 0 1 }
+    }
+    <UV> paint { 0.95 0 }
+  }
+  <Vertex> 11 {
+    0.5 0.5 1
+    <UV> {
+      0.15 1
+      <Tangent> { 0 -1 0 }
+      <Binormal> { 0 0 1 }
+    }
+    <UV> paint { 0.95 1 }
+  }
+  <Vertex> 12 {
+    -0.6 0.45 0
+  }
+  <Vertex> 13 {
+    -0.6 0.45 1
+  }
+  <Vertex> 14 {
+    0.6 0.45 0
+  }
+  <Vertex> 15 {
+    0.6 0.45 1
+  }
+}
+<Group> {
+  <Group> vis {
+    <Polygon> {
+      <Normal> { 0 -1 0 }
+      <TRef> { brick }
+      <TRef> { brick_n }
+      <VertexRef> { 0 2 3 1 <Ref> { wall } }
+    }
+    <Polygon> {
+      <Normal> { 1 0 0 }
+      <TRef> { brick }
+      <TRef> { brick_n }
+      <VertexRef> { 10 11 9 8 <Ref> { wall } }
+    }
+    <Polygon> {
+      <Normal> { -1 0 0 }
+      <TRef> { brick }
+      <TRef> { brick_n }
+      <VertexRef> { 4 5 7 6 <Ref> { wall } }
+    }
+  }
+  <Group> coll {
+    <Collide> { Polyset descend }
+    <Scalar> collide-mask { 0x00000001 }
+    <Polygon> {
+      <VertexRef> { 0 2 3 1 <Ref> { wall } }
+    }
+    <Polygon> {
+      <VertexRef> { 10 11 3 2 <Ref> { wall } }
+    }
+    <Polygon> {
+      <VertexRef> { 0 1 7 6 <Ref> { wall } }
+    }
+  }
+  <Group> wings {
+    <Collide> { Polyset descend }
+    <Scalar> collide-mask { 0x00000010 }
+    <Polygon> {
+      <VertexRef> { 0 1 13 12 <Ref> { wall } }
+    }
+    <Polygon> {
+      <VertexRef> { 3 2 14 15 <Ref> { wall } }
+    }
+  }
+}

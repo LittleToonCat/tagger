@@ -1,0 +1,95 @@
+keyword broadcast;
+keyword ram;
+keyword p2p;
+
+import TagManager/AI
+import TagGame/AI
+import TagPlayer/AI
+import TagAvatar/AI
+import Cell/AI
+import Maze/AI
+
+struct PosterData {
+  blob data;
+  int32/1000 aspect;
+};
+
+struct Color {
+  uint8 r/255;
+  uint8 g/255;
+  uint8 b/255;
+};
+
+struct Winner {
+  string name;
+  Color color;
+  int32 score;
+};
+
+struct ArtPainting {
+  uint8 dir;
+  string name;
+  Color color;
+  PosterData poster;
+  blob data;
+};
+
+dclass TagManager : TimeManager {
+  requestNewGame() p2p;
+  setSuggestedGameId(uint32 gameId) broadcast ram required;
+};
+
+dclass TagGame : DistributedObject {
+  requestJoin() p2p;
+  setJoin(uint8 success);
+  setTimeout(int32 timestamp) broadcast ram required;
+  setObjZone(uint32 objZone) broadcast ram required;
+  setNumPlayers(int16 numPlayers) broadcast ram required;
+  setMazeId(uint32 mazeId) broadcast ram required;
+
+  setWinners(uint8 gameActive, Winner[] winners, ArtPainting[] artPaintings, uint32 nextGameId) broadcast ram required;
+
+  setPoster(PosterData poster) p2p;
+};
+
+dclass TagPlayer : DistributedObject {
+  setName(string name) broadcast ram required;
+  setColor(Color color) broadcast ram required;
+  setGameId(uint32 avId) broadcast ram required;
+  setAvId(uint32 avId) broadcast ram required;
+  setScore(int32 score) broadcast ram required clsend;
+  setScoreDerivation(int32 wallCount, int32 floorCount, int32 pixelCount, 
+                     int32 avPixelCount, int32 onMePixelCount, 
+                     int32/100 bonus) p2p;
+  avatarPixelCount(uint32 avId, int32 count) broadcast clsend;
+
+  setPoster(PosterData poster) p2p;
+};
+
+dclass TagAvatar : DistributedSmoothNode {
+  setPlayerId(uint32 doId) broadcast ram required;
+  setZoneInformation(uint32 zoneId, uint32 visZones[]) p2p;
+
+  userPaint(blob data) p2p;
+  setPaint(blob data) broadcast ram required;
+};
+
+dclass Maze : DistributedObject {
+  setSize(uint16 xsize, uint16 ysize) broadcast ram required;
+  setNumWalls(uint32 numWalls) broadcast ram required;
+};
+
+dclass Cell : DistributedObject {
+  setGeometry(uint8 bits, uint16 sx, uint16 sy) broadcast ram required;
+  userPaint(uint8 dir, blob data) p2p;
+
+  setPaintNorth(blob data) broadcast ram;
+  setPaintSouth(blob data) broadcast ram;
+  setPaintEast(blob data) broadcast ram;
+  setPaintWest(blob data) broadcast ram;
+  setPaintFloor(blob data) broadcast ram;
+  setPaintCeiling(blob data) broadcast ram;
+
+  setPoster(uint8 dir, PosterData poster) broadcast ram;
+};
+

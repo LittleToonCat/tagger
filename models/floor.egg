@@ -1,0 +1,74 @@
+<CoordinateSystem> { Z-Up }
+
+<Texture> fieldstone_n {
+  fieldstone-n.jpg
+  <Scalar> format { rgb }
+  <Scalar> wrapu { repeat }
+  <Scalar> wrapv { repeat }
+  <Scalar> minfilter { linear_mipmap_linear }
+  <Scalar> magfilter { linear }
+  <Scalar> envtype { normal }
+}
+<Texture> fieldstone {
+  fieldstone-c.jpg
+  <Scalar> format { rgb }
+  <Scalar> wrapu { repeat }
+  <Scalar> wrapv { repeat }
+  <Scalar> minfilter { linear_mipmap_linear }
+  <Scalar> magfilter { linear }
+}
+<VertexPool> floor {
+  <Vertex> 0 {
+    -0.5 -0.5 0
+    <UV> {
+      0 0
+      <Tangent> { 1 0 0 }
+      <Binormal> { 0 1 0 }
+    }
+    <UV> paint { 0 0 }
+  }
+  <Vertex> 1 {
+    -0.5 0.5 0
+    <UV> {
+      0 1
+      <Tangent> { 1 0 0 }
+      <Binormal> { 0 1 0 }
+    }
+    <UV> paint { 0 1 }
+  }
+  <Vertex> 2 {
+    0.5 -0.5 0
+    <UV> {
+      1 0
+      <Tangent> { 1 0 0 }
+      <Binormal> { 0 1 0 }
+    }
+    <UV> paint { 1 0 }
+  }
+  <Vertex> 3 {
+    0.5 0.5 0
+    <UV> {
+      1 1
+      <Tangent> { 1 0 0 }
+      <Binormal> { 0 1 0 }
+    }
+    <UV> paint { 1 1 }
+  }
+}
+<Group> {
+  <Group> vis {
+    <Polygon> {
+      <Normal> { 0 0 1 }
+      <TRef> { fieldstone }
+      <TRef> { fieldstone_n }
+      <VertexRef> { 0 2 3 1 <Ref> { floor } }
+    }
+  }
+  <Group> coll {
+    <Collide> { Polyset descend }
+    <Scalar> collide-mask { 0x00000002 }
+    <Polygon> {
+      <VertexRef> { 0 2 3 1 <Ref> { floor } }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+<CoordinateSystem> { Z-Up }
+
+<VertexPool> poster {
+  <Vertex> 0 {
+    -0.25 0.45 -0.25
+    <UV> { 0 0 }
+    <UV> paint { -0.25 -0.25 }
+  }
+  <Vertex> 1 {
+    -0.25 0.45 0.25
+    <UV> { 0 1 }
+    <UV> paint { -0.25 0.25 }
+  }
+  <Vertex> 2 {
+    0.25 0.45 -0.25
+    <UV> { 1 0 }
+    <UV> paint { 0.25 -0.25 }
+  }
+  <Vertex> 3 {
+    0.25 0.45 0.25
+    <UV> { 1 1 }
+    <UV> paint { 0.25 0.25 }
+  }
+}
+<Group> {
+  <Group> poster {
+    <Polygon> {
+      <Normal> { 0 -1 0 }
+      <VertexRef> { 0 2 3 1 <Ref> { poster } }
+    }
+  }
+}

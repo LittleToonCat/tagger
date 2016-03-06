@@ -1,0 +1,101 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+<link href="tagger.css" title="default" rel="stylesheet" type="text/css">
+<title>Tagger</title>
+
+<script src="RunPanda3D.js" type="text/javascript"></script>
+<script src="tagger.js" type="text/javascript"></script>
+
+</head>
+
+<body onload="OnLoad()">
+
+<table class="clear">
+  <col width="251">
+  <col width="640">
+  <col width="41">
+  <col width="308">
+  <col width="200">
+  <tr height="74" class="clear"><td colspan="5" class="clear"><img
+  src="slice_1_abcde.jpg" border="0"></td></tr>
+  <tr height="140" class="clear">
+    <td class="clear"><img src="slice_2_a.jpg" border="0"></td>
+    <td rowspan="3" class="clear">
+      <script type="text/javascript">
+      P3D_RunContent('data', 'tagger.p3d', 'id', 'tagger',
+      'width', '640', 'height', '480',
+      'auto_start', '0',
+      'onpythonload', 'OnPythonLoad()',
+      'gameInfo', 'gameInfo',
+      'noplugin_img', 'title_screen_noplugin.jpg',
+      'noplugin_href', 'http://www.panda3d.org/download.php?runtime',
+      'splash_img', 'title_screen_bricks.jpg',
+      'download_img', 'title_screen_title.jpg',
+      'unauth_img', 'title_screen_play.jpg',
+      'ready_img', 'title_screen_play.jpg',
+      'launch_img', 'title_screen_title.jpg',
+      'failed_img', '')
+     </script>
+    </td>
+    <td colspan="3" class="clear">
+      <img src="slice_2_cde.jpg" usemap="#instructions_map" border="0">
+      <map name="instructions_map">
+        <area href="faq.html" alt="How to play Tagger"
+         shape="rect" coords="36,4,219,55">
+      </map>
+    </td>
+  </tr>
+  <tr height="202" class="clear">
+    <td class="clear"><img src="slice_3_a.jpg" border="0"></td>
+    <td class="clear"><img src="slice_3_c.jpg" border="0"></td>
+    <td class="clear" style="background-image: url('slice_3_d.jpg');
+  width: 308; height: 202">
+      <div id="scoreTable"></div>
+    </td>
+    <td class="clear"><img src="slice_3_e.jpg" border="0"></td>
+ </tr>
+  <tr height="138" class="clear">
+    <td class="clear"><img src="slice_4_a.jpg" border="0"></td>
+    <td class="clear"><img src="slice_4_c.jpg" border="0"></td>
+    <td rowspan="4" class="clear" style="background-image: url('slice_4567_d.jpg');
+  width: 308; height: 368">
+      <div id="playerTable" style="background-image:
+  url('table_width.jpg'); width: 308; min-height: 50"></div>
+      <div style="background-image: url('table_bottom.jpg'); width:
+  308; height: 7"></div>
+    </td>
+    <td class="clear"><img src="slice_4_e.jpg" border="0"></td>
+ </tr>
+  <tr height="58" class="clear">
+    <td class="clear"><img src="slice_5_a.jpg"border="0"></td>
+    <td class="clear">
+      <img src="slice_5_b.jpg" usemap="#panda3d_map" border="0">
+      <map name="panda3d_map">
+      <area href="http://www.panda3d.org/" alt="Panda3D" shape="rect" coords="12,7,629,29">
+      </map>
+    </td>
+    <td class="clear"><img src="slice_5_c.jpg" border="0"></td>
+    <td class="clear"><img src="slice_5_e.jpg" border="0"></td>
+  </tr>
+  <tr height="33" class="clear">
+    <td class="clear"><img src="slice_6_a.jpg"border="0"></td>
+    <td class="clear"><img src="slice_6_b.jpg" border="0" id="slice_6_b"></td>
+    <td class="clear"><img src="slice_6_c.jpg" border="0"></td>
+    <td class="clear"><img src="slice_6_e.jpg" border="0"></td>
+  </tr>
+  <tr height="139" class="clear">
+    <td class="clear"><img src="slice_7_a.jpg" border="0"></td>
+    <td class="clear" style="background-image: url('slice_7_b.jpg')">
+      <div id="posterDiv">
+      </div>
+    </td>
+    <td class="clear"><img src="slice_7_c.jpg" border="0"></td>
+    <td class="clear"><img src="slice_7_e.jpg" border="0"></td>
+  </tr>
+</table>
+
+</body>
+</html>

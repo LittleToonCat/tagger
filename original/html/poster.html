@@ -1,0 +1,26 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+<link href="tagger.css" title="default" rel="stylesheet" type="text/css">
+<title>Poster</title>
+
+<script src="poster.js" type="text/javascript"></script>
+
+</head>
+
+<body onload="OnLoad()" style="background-image: url('slice_7_b.jpg')">
+
+<form value="posterForm" action="http://tagger.ddrose.com/cgi-python/poster.py" 
+      method="post" enctype="multipart/form-data" onSubmit="OnSubmit()"
+      id="posterForm" style="display: none">
+  <input type="hidden" name="playerId" id="playerId">
+  <input type="hidden" name="nextUrl" id="nextUrl">
+  <input type="file" name="poster" size="50" style="background: #ffffff">
+  <input type="submit" id="uploadButton" value="Upload">
+</form>
+<img src="slice_uploading.png" border="0" style="display: none" id="uploading">
+<img src="slice_sent.png" border="0" style="display: none" id="sent">
+
+</body> </html>

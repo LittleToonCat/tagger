@@ -1,0 +1,34 @@
+@font-face {
+    font-family: one8seven;
+    src: url('one8seven.ttf');
+}
+
+TABLE.clear {
+    table-layout: fixed;
+    border-collapse: collapse;
+    border-style: hidden;
+    border-spacing: 0;
+    padding: 0;
+    text-align: left;
+    vertical-align: top;
+}
+
+TD.clear {
+    border-style: hidden;
+    border-spacing: 0;
+    padding: 0;
+    text-align: left;
+    vertical-align: top;
+}
+
+TR.clear {
+    border-style: hidden;
+    border-spacing: 0;
+    padding: 0;
+    text-align: left;
+    vertical-align: top;
+}
+
+SPAN.tag { 
+    font-family: "one8seven";
+}
