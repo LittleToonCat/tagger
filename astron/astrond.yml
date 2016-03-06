@@ -1,0 +1,28 @@
+general:
+    # A list of DC files to be loaded.
+    #     NOTE: Order is sensitive, DC files loaded in a different order will not match.
+    dc_files:
+        - ../direct.dc
+        - ../tagger.dc
+
+messagedirector:
+    bind: 127.0.0.1:7190
+
+# The Roles section allows specifying roles that we would like this daemon to perform.
+roles:
+    # For example, let's have a client agent which listens on port 7198 on all interfaces:
+    - type: clientagent
+      bind: 0.0.0.0:7198
+      # Manual_dc_hash tells the server what DC hash version to expect from the client.
+      #     This is mostly used if the DC parser used by the client doesn't have hash parity
+      #     with the parser used by Astron. (Panda3D users will currently need to enable this).
+      #manual_dc_hash: 0xABCD1234
+      version: "tagger-dev"
+
+      channels:
+          min: 100100
+          max: 100999
+
+    # Next we'll have a state server, whose control channel is 402000.
+    - type: stateserver
+      control: 402000

@@ -3,10 +3,6 @@
 // your own project (or load it from the direct source tree) and build
 // on it with your own dc file for your own classes.
 
-keyword broadcast;
-keyword ram;
-keyword p2p;
-
 from direct.distributed import DistributedObject/AI
 from direct.distributed import TimeManager/AI
 from direct.distributed import DistributedNode/AI
@@ -30,7 +26,7 @@ dclass DistributedObject {
 };
 
 dclass TimeManager: DistributedObject {
-  requestServerTime(uint8 context) p2p;
+  requestServerTime(uint8 context) clsend airecv;
   serverTime(uint8 context, int32 timestamp);
 };
 
