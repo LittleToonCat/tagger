@@ -1,4 +1,7 @@
-from direct.distributed.ClientRepository import ClientRepository
+from direct.distributed.ClientRepositoryBase import ClientRepositoryBase
+from direct.distributed.MsgTypes import *
+from direct.distributed.PyDatagram import PyDatagram
+from direct.distributed.PyDatagramIterator import PyDatagramIterator
 from direct.gui.DirectGui import *
 from direct.showbase.DirectObject import DirectObject
 from direct.interval.IntervalGlobal import *
@@ -14,7 +17,11 @@ import random
 import math
 import os
 
-class TagClientRepository(ClientRepository):
+GameGlobalsId = 1000
+
+# Using ClientRepositoryBase since AstronClientRepository
+# is not finished and possibly not usable yet.
+class TagClientRepository(ClientRepositoryBase):
 
     # Degrees per second of rotation
     rotateSpeed = 90
@@ -27,14 +34,11 @@ class TagClientRepository(ClientRepository):
     def __init__(self, playerName = None, threadedNet = True):
         dcFileNames = ['direct.dc', 'tagger.dc']
         
-        ClientRepository.__init__(self, dcFileNames = dcFileNames,
+        ClientRepositoryBase.__init__(self, dcFileNames = dcFileNames,
                                   connectMethod = self.CM_NET,
                                   threadedNet = threadedNet)
 
         base.transitions.FadeModelName = 'models/fade'
-        
-        # Need at least 32 bits to receive big picture packets.
-        self.setTcpHeaderSize(4)
 
         # Allow some time for other processes.  This also allows time
         # each frame for the network thread to run.
@@ -163,6 +167,11 @@ class TagClientRepository(ClientRepository):
         v = random.random() * 0.3 + 0.7
         self.playerColor = self.hsv2rgb(h, s, v)
 
+        # Get the game's version.
+        self.gameVersion = getattr(self.gameInfo, 'server-version', None)
+        if not self.gameVersion:
+            self.gameVersion = base.config.GetString('server-version', 'tagger-dev')
+
         # Get the player's name.
         name = playerName
         if not name:
@@ -264,6 +273,10 @@ class TagClientRepository(ClientRepository):
     def exit(self):
         if self.gotMusic:
             self.musicTrackFilename.unlink()
+
+        if self.isConnected():
+            self.sendDisconnect()
+            self.disconnect()
             
         sys.exit()
 
@@ -306,17 +319,42 @@ class TagClientRepository(ClientRepository):
 
     def connectSuccess(self):
         """ Successfully connected.  But we still can't really do
-        anything until we've got the doID range. """
+        anything until we send an CLIENT_HELLO message. """
         self.makeWaitingText()
+
+        dg = PyDatagram()
+        dg.addUint16(CLIENT_HELLO)
+        dg.addUint32(self.hashVal)
+        dg.addString(self.gameVersion)
+        self.send(dg)
 
         # Make sure we have interest in the TimeManager zone, so we
         # always see it even if we switch to another zone.
-        self.setInterestZones([1])
+        #self.setInterestZones([1])
 
         # We must wait for the TimeManager to be fully created and
         # synced before we can enter zone 2 and wait for the game
         # object.
-        self.acceptOnce(self.uniqueName('gotTimeSync'), self.syncReady)
+        #self.acceptOnce(self.uniqueName('gotTimeSync'), self.syncReady)
+
+    def handleDatagram(self, di):
+        msgType = self.getMsgType()
+        if msgType == CLIENT_HELLO_RESP:
+            self.handleHelloResp()
+
+    def handleHelloResp(self):
+        self.startHeartbeat()
+
+    def sendHeartbeat(self):
+        dg = PyDatagram()
+        dg.addUint16(CLIENT_HEARTBEAT)
+        self.send(dg)
+
+    def sendDisconnect(self):
+        print 'Sending disconnect messsage'
+        dg = PyDatagram()
+        dg.addUint16(CLIENT_DISCONNECT)
+        self.send(dg)
 
     def syncReady(self):
         """ Now we've got the TimeManager manifested, and we're in

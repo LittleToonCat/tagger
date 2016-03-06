@@ -12,7 +12,7 @@ messagedirector:
 roles:
     # For example, let's have a client agent which listens on port 7198 on all interfaces:
     - type: clientagent
-      bind: 0.0.0.0:7198
+      bind: 0.0.0.0:4430
       # Manual_dc_hash tells the server what DC hash version to expect from the client.
       #     This is mostly used if the DC parser used by the client doesn't have hash parity
       #     with the parser used by Astron. (Panda3D users will currently need to enable this).
