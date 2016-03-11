@@ -38,6 +38,10 @@ class TagClientRepository(ClientRepositoryBase):
 
         self.GameGlobalsId = 1000
 
+        self.zoneInterest = None
+
+        self.visInterest = None
+
         self.avatarManager = self.generateGlobalObject(1001, 'TagAvatarManager')
 
         base.transitions.FadeModelName = 'models/fade'
@@ -343,10 +347,25 @@ class TagClientRepository(ClientRepositoryBase):
         msgType = self.getMsgType()
         if msgType == CLIENT_HELLO_RESP:
             self.handleHelloResp()
+        elif msgType == CLIENT_OBJECT_SET_FIELD:
+            self.handleUpdateField(di)
+        elif msgType == CLIENT_ENTER_OBJECT_REQUIRED:
+            self.handleGenerate(di)
+        elif msgType == CLIENT_ENTER_OBJECT_REQUIRED_OTHER:
+            self.handleGenerate(di, True)
+        elif msgType == CLIENT_DONE_INTEREST_RESP:
+            self.handleInterestDoneMessage(di)
+        elif msgType == CLIENT_ENTER_OBJECT_REQUIRED_OWNER:
+            self.handleGenerateOwner(di)
+        elif msgType == CLIENT_ENTER_OBJECT_REQUIRED_OTHER_OWNER:
+            self.handleGenerateOwner(di, True)
+        elif msgType == CLIENT_OBJECT_LEAVING:
+            self.handleDelete(di)
 
     def handleHelloResp(self):
         self.startHeartbeat()
-        self.avatarManager.requestAvatar(self.playerName)
+        self.acceptOnce('accessResponse', self.handleResponse)
+        self.avatarManager.requestAccess()
 
     def sendHeartbeat(self):
         dg = PyDatagram()
@@ -359,16 +378,132 @@ class TagClientRepository(ClientRepositoryBase):
         dg.addUint16(CLIENT_DISCONNECT)
         self.send(dg)
 
+    def handleGenerate(self, di, other = False):
+        doId = di.getUint32()
+        parentId = di.getUint32()
+        zoneId = di.getUint32()
+        classId = di.getUint16()
+
+        dclass = self.dclassesByNumber[classId]
+        dclass.startGenerate()
+        if other:
+            self.generateWithRequiredOtherFields(dclass, doId, di, parentId, zoneId)
+        else:
+            self.generateWithRequiredFields(dclass, doId, di, parentId, zoneId)
+        dclass.stopGenerate()
+        print dclass.getName()
+
+    def handleGenerateOwner(self, di, other = False):
+        doId = di.getUint32()
+        parentId = di.getUint32()
+        zoneId = di.getUint32()
+        classId = di.getUint16()
+
+        dclass = self.dclassesByNumber[classId]
+        dclass.startGenerate()
+
+        # Copied from ClientRepositoryBase and make it support
+        # generating only required fields.
+        if doId in self.doId2ownerView:
+            # ...it is in our dictionary.
+            # Just update it.
+            self.notify.error('duplicate owner generate for %s (%s)' % (
+                doId, dclass.getName()))
+            distObj = self.doId2ownerView[doId]
+            assert distObj.dclass == dclass
+            distObj.generate()
+            if other:
+                distObj.updateRequiredOtherFields(dclass, di)
+            else:
+                distObj.updateRequiredFields(dclass, di)
+            # updateRequiredOtherFields calls announceGenerate
+        elif self.cacheOwner.contains(doId):
+            # ...it is in the cache.
+            # Pull it out of the cache:
+            distObj = self.cacheOwner.retrieve(doId)
+            assert distObj.dclass == dclass
+            # put it in the dictionary:
+            self.doId2ownerView[doId] = distObj
+            # and update it.
+            distObj.generate()
+            if other:
+                distObj.updateRequiredOtherFields(dclass, di)
+            else:
+                distObj.updateRequiredFields(dclass, di)
+            # updateRequiredOtherFields calls announceGenerate
+        else:
+            # ...it is not in the dictionary or the cache.
+            # Construct a new one
+            classDef = dclass.getOwnerClassDef()
+            if classDef == None:
+                self.notify.error("Could not create an undefined %s object. Have you created an owner view?" % (dclass.getName()))
+            distObj = classDef(self)
+            distObj.dclass = dclass
+            # Assign it an Id
+            distObj.doId = doId
+            # Put the new do in the dictionary
+            self.doId2ownerView[doId] = distObj
+            # Update the required fields
+            distObj.generateInit()  # Only called when constructed
+            distObj.generate()
+            if other:
+                distObj.updateRequiredOtherFields(dclass, di)
+            else:
+                distObj.updateRequiredFields(dclass, di)
+            # updateRequiredOtherFields calls announceGenerate
+        dclass.stopGenerate()
+        print dclass.getName()
+        
+        if distObj.dclass.getName() == 'TagPlayer':
+            player = self.doId2do.get(doId)
+            if player:
+                self.localPlayerGenerated(player)
+            else:
+                self.acceptOnce('generate-%d' % doId, self.localPlayerGenerated, [player])
+        elif distObj.dclass.getName() == 'TagAvatar':
+            av = self.doId2do.get(doId)
+            if av:
+                self.localAvatarGenerated(av)
+            else:
+                self.acceptOnce('generate-%d' % doId, self.localAvatarGenerated, [av])
+
+    def handleDelete(self, di):
+        doId = di.getUint32()
+        if doId in self.doId2do:
+            obj = self.doId2do[doId]
+            del self.doId2do[doId]
+            obj.deleteOrDelay()
+
+    def localPlayerGenerated(self, player):
+        self.player = player
+        self.player.setupLocalPlayer(self)
+    
+    def locateAvatar(self, zoneId):
+        if self.av:
+            dg = PyDatagram()
+            dg.addUint16(CLIENT_OBJECT_LOCATION)
+            dg.addUint32(self.av.doId)
+            dg.addUint32(self.timeManager.doId)
+            dg.addUint32(zoneId)
+            self.send(dg)
+
+    def handleResponse(self, resp):
+        if resp == 1:
+            self.acceptOnce(self.uniqueName('gotTimeSync'), self.syncReady)
+            self.mgrInterest = self.addInterest(self.GameGlobalsId, 1, 'game manager')
+
     def syncReady(self):
         """ Now we've got the TimeManager manifested, and we're in
         sync with the server time.  Now we can enter the world.  Check
         to see if we've received our doIdBase yet. """
 
-        if self.haveCreateAuthority():
-            self.gotCreateReady()
-        else:
+        self.waitForGame()
+
+        #if self.haveCreateAuthority():
+        #    self.gotCreateReady()
+        #else:
             # Not yet, keep waiting a bit longer.
-            self.accept(self.uniqueName('createReady'), self.gotCreateReady)
+        #    self.accept(self.uniqueName('createReady'), self.gotCreateReady)
 
     def gotCreateReady(self):
         """ Ready to enter the world.  Expand our interest to include
@@ -392,17 +527,19 @@ class TagClientRepository(ClientRepositoryBase):
             self.chooseGameTask = None
 
         self.game = game
-        self.setInterestZones([1, 2, self.game.objZone])
+        self.objInterest = self.addInterest(self.timeManager.doId, self.game.objZone, 'game objects')
+
+        self.game.d_requestPlayer()
 
         # Manifest a player.  The player always has our "base" doId.
-        self.player = TagPlayer(self, name = self.playerName,
-                                color = self.playerColor,
-                                gameId = self.game.doId)
-        self.createDistributedObject(distObj = self.player, zoneId = self.game.objZone, doId = self.doIdBase, reserveDoId = True)
-        self.player.setupLocalPlayer(self)
+        #self.player = TagPlayer(self, name = self.playerName,
+        #                        color = self.playerColor,
+        #                        gameId = self.game.doId)
+        #self.createDistributedObject(distObj = self.player, zoneId = self.game.objZone, doId = self.doIdBase, reserveDoId = True)
+        #self.player.setupLocalPlayer(self)
 
         # Set the saved poster data, and also transmit it to the AI.
-        self.player.setPoster(self.posterData)
+        #self.player.setPoster(self.posterData)
         self.game.sendUpdate('setPoster', [self.posterData])
 
         self.accept(self.uniqueName('resetGame'), self.resetGame)
@@ -434,7 +571,7 @@ class TagClientRepository(ClientRepositoryBase):
         self.makeWaitingText()
         
         self.accept(self.uniqueName('joinGame'), self.joinGame)
-        self.setInterestZones([1, 2])
+        self.gamesListInterest = self.addInterest(self.timeManager.doId, 2, 'games list')
 
         if self.chooseGameTask:
             taskMgr.remove(self.chooseGameTask)
@@ -476,7 +613,8 @@ class TagClientRepository(ClientRepositoryBase):
 
     def enterMaze(self, maze):
         # We've got a maze.
-        self.setInterestZones([1, 2])
+        self.maze = maze
+        #self.setInterestZones([1, 2])
 
         if self.waitingText:
             self.waitingText.destroy()
@@ -562,15 +700,26 @@ class TagClientRepository(ClientRepositoryBase):
         if self.av:
             self.sendDeleteMsg(self.av.doId)
             self.av = None
-        self.av = TagAvatar(self, playerId = self.player.doId)
-        x = random.uniform(0, maze.xsize * Globals.MazeScale)
-        y = random.uniform(0, maze.ysize * Globals.MazeScale)
+        self.game.d_requestAvatar(self.player.doId)
+
+        #self.av = TagAvatar(self, playerId = self.player.doId)
+        #x = random.uniform(0, maze.xsize * Globals.MazeScale)
+        #y = random.uniform(0, maze.ysize * Globals.MazeScale)
+        #h = random.uniform(0, 360)
+        #self.av.setPosHpr(x, y, 0, h, 0, 0)
+        #self.createDistributedObject(distObj = self.av, zoneId = 2)
+        #self.av.setupLocalAvatar(self)
+
+        #self.player.b_setAvId(self.av.doId)
+
+    def localAvatarGenerated(self, av):
+        self.av = av
+        print self.maze
+        x = random.uniform(0, self.maze.xsize * Globals.MazeScale)
+        y = random.uniform(0, self.maze.ysize * Globals.MazeScale)
         h = random.uniform(0, 360)
         self.av.setPosHpr(x, y, 0, h, 0, 0)
-        self.createDistributedObject(distObj = self.av, zoneId = 2)
         self.av.setupLocalAvatar(self)
-
-        self.player.b_setAvId(self.av.doId)
 
         # The camera arm follows behind the avatar.
         self.cameraArmHinge = self.av.attachNewNode('cameraArmHinge')
@@ -933,15 +1082,20 @@ class TagClientRepository(ClientRepositoryBase):
         the server in the background. """
 
         assert not self.gotMusic
-        self.musicTrackFilename = Filename.temporary('', '', '.ogg')
+        self.musicTrackFilename = 'models/' + Globals.MusicTrack
         print "Music filename = %s" % (self.musicTrackFilename)
-        http = HTTPClient.getGlobalPtr()
-        ch = http.makeChannel(False)
-        ch.beginGetDocument(Globals.MusicTrackURL)
-        ch.downloadToFile(self.musicTrackFilename)
+        self.gotMusic = True
+        messenger.send('gotMusic')
 
-        taskMgr.add(self.__getMusicTask, 'getMusicTask',
-                    extraArgs = [ch], appendTask = True)
+        #self.musicTrackFilename = Filename.temporary('', '', '.ogg')
+        #print "Music filename = %s" % (self.musicTrackFilename)
+        #http = HTTPClient.getGlobalPtr()
+        #ch = http.makeChannel(False)
+        #ch.beginGetDocument(Globals.MusicTrackURL)
+        #ch.downloadToFile(self.musicTrackFilename)
+
+        #taskMgr.add(self.__getMusicTask, 'getMusicTask',
+        #            extraArgs = [ch], appendTask = True)
 
     def __getMusicTask(self, ch, task):
         assert not self.gotMusic

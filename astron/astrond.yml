@@ -31,6 +31,9 @@ roles:
       channels:
           min: 100100
           max: 100999
+      client:
+          relocate: true
+          add_interest: enabled
 
     # Next we'll have a state server, whose control channel is 402000.
     - type: stateserver

@@ -1,5 +1,9 @@
 from direct.distributed.DistributedObjectAI import DistributedObjectAI
 from direct.distributed.ClockDelta import globalClockDelta
+from direct.distributed.PyDatagram import PyDatagram
+from direct.distributed.MsgTypes import *
+from TagPlayerAI import TagPlayerAI
+from TagAvatarAI import TagAvatarAI
 from pandac.PandaModules import *
 from MazeAI import MazeAI
 import Globals
@@ -16,6 +20,7 @@ class TagGameAI(DistributedObjectAI):
         self.winners = []
         self.artPaintings = []
         self.nextGameId = 0
+        self.mazeId = 0
         self.timeout = globalClock.getFrameTime() + Globals.GameLengthSeconds
         self.expireTask = taskMgr.doMethodLater(Globals.GameLengthSeconds, self.expireGame, 'expireGame')
         self.deleteGameTask = None
@@ -29,9 +34,6 @@ class TagGameAI(DistributedObjectAI):
         # Player ID's in the game.
         self.playerIds = []
 
-        # Player ID's about to join the game.
-        self.waitingIds = []
-
         # Mapping of player url -> server url for player posters.
         self.playerPosterMap = {}
 
@@ -42,8 +44,7 @@ class TagGameAI(DistributedObjectAI):
         """ Generate a maze for this game. """
 
         self.maze = MazeAI(self.air, self.doId)
-        self.air.createDistributedObject(
-            distObj = self.maze, zoneId = self.objZone)
+        self.maze.generateWithRequired(self.objZone)
 
         # How many players are we basing this maze on?
         numPlayers = len(playerIds)
@@ -61,6 +62,7 @@ class TagGameAI(DistributedObjectAI):
         ysize = int(math.floor(mazeSize / xsize + 0.5))
 
         self.mazeId = self.maze.doId
+        self.sendUpdate('setMazeId', [self.mazeId])
 
         self.maze.generateMaze(xsize, ysize, prevMaze = prevMaze)
 
@@ -114,24 +116,22 @@ class TagGameAI(DistributedObjectAI):
     def newPlayer(self, player):
         """ A new player has just joined the world: is he in this
         game? """
-        if player.gameId == self.doId and player.doId in self.waitingIds:
-            player.game = self
-            self.waitingIds.remove(player.doId)
-            self.playerIds.append(player.doId)
-            self.maxNumPlayers = max(self.maxNumPlayers, len(self.playerIds))
-            self.sendUpdate('setNumPlayers', [len(self.playerIds)])
+        player.game = self
+        self.playerIds.append(player.doId)
+        self.maxNumPlayers = max(self.maxNumPlayers, len(self.playerIds))
+        self.sendUpdate('setNumPlayers', [len(self.playerIds)])
 
-            self.notify.info("player %s joined game %s, %s in game" % (player.name, self.doId, len(self.playerIds)))
+        self.notify.info("player %s joined game %s, %s in game" % (player.name, self.doId, len(self.playerIds)))
 
-            # Award any paint points for carried-forward art paintings.
-            prevCells = self.maze.prevPlayers.get(player.color, [])
-            if prevCells:
-                del self.maze.prevPlayers[player.color]
-                for cell, dir in prevCells:
-                    cell.markPrevUser(player, dir)
+        # Award any paint points for carried-forward art paintings.
+        prevCells = self.maze.prevPlayers.get(player.color, [])
+        if prevCells:
+            del self.maze.prevPlayers[player.color]
+            for cell, dir in prevCells:
+                cell.markPrevUser(player, dir)
 
-            # Assign a cell for the poster.
-            self.maze.chooseRandomPosterCell(player)
+        # Assign a cell for the poster.
+        self.maze.chooseRandomPosterCell(player)
         
 
     def deletePlayer(self, player):
@@ -219,11 +219,9 @@ class TagGameAI(DistributedObjectAI):
         if self.isDeleted():
             return
             
-        self.maze.deleteMaze()
-        self.air.sendDeleteMsg(self.maze.doId)
-        self.air.sendDeleteMsg(self.doId)
         self.air.games.remove(self)
         self.ignoreAll()
+        self.requestDelete()
 
     def getWinners(self):
         return (self.gameActive, self.winners, self.artPaintings, self.nextGameId)
@@ -231,20 +229,50 @@ class TagGameAI(DistributedObjectAI):
     def requestJoin(self):
         """ Called by a new client to join the game. """
 
-        playerId = self.air.getAvatarIdFromSender()
+        clientId = self.air.getAvatarIdFromSender()
 
-        if not self.gameActive or len(self.playerIds) + len(self.waitingIds) >= Globals.MaxPlayersPerGame:
+        if not self.gameActive or len(self.playerIds) >= Globals.MaxPlayersPerGame:
             # Not allowing more joiners right now.
-            self.sendUpdateToAvatarId(playerId, 'setJoin', [False])
+            self.sendUpdateToAvatarId(clientId, 'setJoin', [False])
             self.air.timeManager.chooseSuggestedGame(self.doId)
             return
 
-        self.waitingIds.append(playerId)
-        self.sendUpdateToAvatarId(playerId, 'setJoin', [True])
+        self.sendUpdateToAvatarId(clientId, 'setJoin', [True])
 
-        if len(self.playerIds) + len(self.waitingIds) >= Globals.WantedPlayersPerGame:
+        if len(self.playerIds) >= Globals.WantedPlayersPerGame:
             # This should no longer be the suggested game.
             self.air.timeManager.chooseSuggestedGame(self.doId)
+
+    def requestPlayer(self, name, color):
+        clientId = self.air.getAvatarIdFromSender()
+
+        player = TagPlayerAI(self.air)
+        player.setName(name)
+        player.setColor(color)
+        player.setGameId(self.doId)
+        player.generateWithRequired(self.objZone)
+
+        self.air.setOwner(player.doId, clientId)
+
+        dg = PyDatagram()
+        dg.addServerHeader(clientId, self.air.ourChannel, CLIENTAGENT_SET_CLIENT_ID)
+        dg.addChannel(self.GetPuppetConnectionChannel(player.doId))
+        self.air.send(dg)
+
+        self.newPlayer(player)
+
+    def requestAvatar(self, playerId):
+        playerId = self.air.getAvatarIdFromSender()
+        player = self.air.doId2do.get(playerId)
+        if player:
+            av = TagAvatarAI(self.air)
+            av.playerId = playerId
+            av.generateWithRequired(2)
+            player.b_setAvId(av.doId)
+
+            self.air.setOwner(av.doId, self.GetPuppetConnectionChannel(playerId))
+        else:
+            self.notify.warning('Client tried to requestAvatar with an non-existant player: %d' % playerId)
             
     def setPoster(self, posterData):
         """ Sent from the client to tell the AI its current poster

@@ -35,3 +35,8 @@ class TagUDRepository(AstronInternalRepository):
 
         avatarManager = TagAvatarManagerUD(self)
         avatarManager.generateWithRequiredAndId(1001, self.GameGlobalsId, 0)
+
+        print 'Connected successfully!'
+
+    def getAvatarIdFromSender(self):
+        return self.getMsgSender() & 0xFFFFFFFFL

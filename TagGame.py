@@ -60,14 +60,27 @@ class TagGame(DistributedObject):
 
     def __gotMaze(self, mazeList):
         self.maze = mazeList[0]
-        if self.localPlayerJoined:
+        if self.cr.player:
             messenger.send(self.cr.uniqueName('enterMaze'), [self.maze],
                            taskChain = 'default')
+        else:
+            self.acceptOnce('gotLocalPlayer', self.gotLocalPlayer)
+
+    def gotLocalPlayer(self):
+        messenger.send(self.cr.uniqueName('enterMaze'), [self.maze],
+                       taskChain = 'default')
 
     def d_requestJoin(self):
         """ Called by a new client to join the game. """
 
         self.sendUpdate('requestJoin', [])
+
+    def d_requestPlayer(self):
+
+        self.sendUpdate('requestPlayer', [self.cr.playerName, self.cr.playerColor])
+
+    def d_requestAvatar(self, playerId):
+        self.sendUpdate('requestAvatar', [playerId])
 
     def setJoin(self, success):
         """ Called by the server to tell a player he's joined the
@@ -276,7 +289,7 @@ class TagGame(DistributedObject):
             return
 
         # Load it and start it.
-        self.music = loader.loadMusic(self.cr.musicTrackFilename.cStr())
+        self.music = loader.loadMusic(self.cr.musicTrackFilename)
         if self.music:
             gameLength = Globals.GameLengthSeconds + Globals.MusicHangSeconds
             startTime = 0

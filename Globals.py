@@ -39,6 +39,8 @@ GameLengthSeconds = 210
 # Name of the music track.
 MusicTrackURL = 'http://tagger.ddrose.com/UrbanLegends_UL12-IHS-Knox.ogg'
 
+MusicTrack = 'UrbanLegends_UL12-IHS-Knox.ogg'
+
 # Number of seconds of the music track to let hang over the final
 # timer reaching 0.
 MusicHangSeconds = 9

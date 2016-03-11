@@ -24,7 +24,7 @@ class TagManagerAI(TimeManagerAI):
         availableSpaces = []
         for game in self.air.games:
             if game.gameActive:
-                spaces = max(Globals.MaxPlayersPerGame - len(game.playerIds) - len(game.waitingIds), 0)
+                spaces = max(Globals.MaxPlayersPerGame - len(game.playerIds), 0)
                 availableSpaces.append(spaces)
         if sum(availableSpaces) > 5:
             # If we've got room for at least five more players in our
@@ -32,8 +32,7 @@ class TagManagerAI(TimeManagerAI):
             print "games available: %s = %s" % (availableSpaces, sum(availableSpaces))
             return
 
-        gameId = self.air.allocateDoId()
-        self.air.makeGame(doId = gameId)
+        gameId = self.air.makeGame()
         self.b_setSuggestedGameId(gameId)
 
     def chooseSuggestedGame(self, origGameId):
@@ -48,7 +47,7 @@ class TagManagerAI(TimeManagerAI):
         for game in self.air.games:
             if not game.gameActive:
                 continue
-            numPlayers = len(game.playerIds) + len(game.waitingIds)
+            numPlayers = len(game.playerIds)
             if minNumPlayers is None or numPlayers < minNumPlayers:
                 minNumPlayers = numPlayers
                 gameId = game.doId

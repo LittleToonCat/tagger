@@ -3,7 +3,9 @@ import TagAvatarManager/UD
 import TagManager/AI
 import TagGame/AI
 import TagPlayer/AI
+from TagPlayer import TagPlayer/OV
 import TagAvatar/AI
+from TagAvatar import TagAvatar/OV
 import Cell/AI
 import Maze/AI
 
@@ -36,16 +38,20 @@ dclass RootObject : DistributedObject {
 };
 
 dclass TagAvatarManager : DistributedObject {
-  requestAvatar(string name) clsend airecv;
+  requestAccess() clsend airecv;
+  accessResponse(uint8 success);
 };
 
 dclass TagManager : TimeManager {
+  setParentingRules();
   requestNewGame() clsend airecv;
   setSuggestedGameId(uint32 gameId) broadcast ram required;
 };
 
 dclass TagGame : DistributedObject {
   requestJoin() clsend airecv;
+  requestPlayer(string name, Color color) clsend airecv;
+  requestAvatar(uint32 playerId) clsend airecv;
   setJoin(uint8 success);
   setTimeout(int32 timestamp) broadcast ram required;
   setObjZone(uint32 objZone) broadcast ram required;
@@ -62,7 +68,7 @@ dclass TagPlayer : DistributedObject {
   setColor(Color color) broadcast ram required;
   setGameId(uint32 avId) broadcast ram required;
   setAvId(uint32 avId) broadcast ram required;
-  setScore(int32 score) broadcast ram required clsend;
+  setScore(int32 score) broadcast ram required;
   setScoreDerivation(int32 wallCount, int32 floorCount, int32 pixelCount, 
                      int32 avPixelCount, int32 onMePixelCount, 
                      int32/100 bonus) broadcast;
@@ -75,8 +81,8 @@ dclass TagAvatar : DistributedSmoothNode {
   setPlayerId(uint32 doId) broadcast ram required ownrecv;
   setZoneInformation(uint32 zoneId, uint32 visZones[]) ownrecv;
 
-  userPaint(blob data) ownsend airecv;
-  setPaint(blob data) broadcast ram required;
+  userPaint(uint32 playerId, blob data) clsend ownrecv;
+  setPaint(blob data) broadcast ram required ownsend;
 };
 
 dclass Maze : DistributedObject {

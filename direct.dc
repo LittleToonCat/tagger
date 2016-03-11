@@ -31,12 +31,12 @@ dclass TimeManager: DistributedObject {
 };
 
 dclass DistributedNode: DistributedObject {
-  setX(int16 / 10) broadcast ram ownsend;
-  setY(int16 / 10) broadcast ram ownsend;
-  setZ(int16 / 10) broadcast ram ownsend;
-  setH(int16 % 360 / 10) broadcast ram ownsend;
-  setP(int16 % 360 / 10) broadcast ram ownsend;
-  setR(int16 % 360 / 10) broadcast ram ownsend;
+  setX(int16 / 10) broadcast ram ownsend airecv;
+  setY(int16 / 10) broadcast ram ownsend airecv;
+  setZ(int16 / 10) broadcast ram ownsend airecv;
+  setH(int16 % 360 / 10) broadcast ram ownsend airecv;
+  setP(int16 % 360 / 10) broadcast ram ownsend airecv;
+  setR(int16 % 360 / 10) broadcast ram ownsend airecv;
 
   setPos: setX, setY, setZ;
   setHpr: setH, setP, setR;
@@ -50,14 +50,14 @@ dclass DistributedNode: DistributedObject {
 dclass DistributedSmoothNode: DistributedNode {
   // Component set pos and hpr functions.
 
-  setComponentL(uint64) broadcast ram ownsend;
-  setComponentX(int16 / 10) broadcast ram ownsend;
-  setComponentY(int16 / 10) broadcast ram ownsend;
-  setComponentZ(int16 / 10) broadcast ram ownsend;
-  setComponentH(int16 % 360 / 10) broadcast ram ownsend;
-  setComponentP(int16 % 360 / 10) broadcast ram ownsend;
-  setComponentR(int16 % 360 / 10) broadcast ram ownsend;
-  setComponentT(int16 timestamp) broadcast ram ownsend;
+  setComponentL(uint64) broadcast ram ownsend airecv;
+  setComponentX(int16 / 10) broadcast ram ownsend airecv;
+  setComponentY(int16 / 10) broadcast ram ownsend airecv;
+  setComponentZ(int16 / 10) broadcast ram ownsend airecv;
+  setComponentH(int16 % 360 / 10) broadcast ram ownsend airecv;
+  setComponentP(int16 % 360 / 10) broadcast ram ownsend airecv;
+  setComponentR(int16 % 360 / 10) broadcast ram ownsend airecv;
+  setComponentT(int16 timestamp) broadcast ram ownsend airecv;
 
   // Composite set pos and hpr functions.  These map to combinations
   // of one or more of the above components.  They all include
@@ -76,7 +76,7 @@ dclass DistributedSmoothNode: DistributedNode {
   // keep position and 'location' in sync
   setSmPosHprL: setComponentL, setComponentX, setComponentY, setComponentZ, setComponentH, setComponentP, setComponentR, setComponentT;
 
-  clearSmoothing(int8 bogus) broadcast;
+  clearSmoothing(int8 bogus) broadcast ownsend;
 
   suggestResync(uint32 avId, int16 timestampA, int16 timestampB,
                 int32 serverTimeSec, uint16 serverTimeUSec,

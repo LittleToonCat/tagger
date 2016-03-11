@@ -11,6 +11,10 @@ class TagAvatarAI(DistributedSmoothNodeAI):
         # than the avatar's own player, who have paint on this avatar.
         self.paintedOnMe = {}
 
+        self.paint = ''
+
+        self.playerId = 0
+
         # Which cell the avatar appears to be standing in.
         self.cellLocation = None
 
@@ -18,6 +22,19 @@ class TagAvatarAI(DistributedSmoothNodeAI):
 
     def setPlayerId(self, playerId):
         self.playerId = playerId
+
+    def d_setPlayerId(self, playerId):
+        self.sendUpdate('setPlayerId', [playerId])
+
+    def b_setPlayerId(self, playerId):
+        self.d_setPlayerId(playerId)
+        self.setPlayerId(playerId)
+
+    def getPlayerId(self):
+        return self.playerId
+
+    def getPaint(self):
+        return self.paint
 
     def delete(self):
         messenger.send('deleteAvatar', [self])
@@ -31,7 +48,6 @@ class TagAvatarAI(DistributedSmoothNodeAI):
 
     def announceGenerate(self):
         DistributedSmoothNodeAI.announceGenerate(self)
-        self.tellZone()
 
     def setX(self, *args):
         DistributedSmoothNodeAI.setX(self, *args)

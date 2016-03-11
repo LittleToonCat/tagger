@@ -1,4 +1,5 @@
 from direct.distributed.DistributedSmoothNode import DistributedSmoothNode
+from direct.distributed.DistributedObjectOV import DistributedObjectOV
 from pandac.PandaModules import *
 from direct.actor.Actor import Actor
 import Globals
@@ -322,7 +323,7 @@ class TagAvatar(DistributedSmoothNode):
             # If we're painting on some remote avatar, we have to ask
             # him to do the conflict resolution.
             myp.write(data, Globals.ImageFormat)
-            self.sendUpdate('userPaint', [data.getData()])
+            self.sendUpdate('userPaint', [self.player.doId, data.getData()])
             myp.fill(0)
             
         self.paintDirty = False
@@ -379,11 +380,11 @@ class TagAvatar(DistributedSmoothNode):
             p2.d_avatarPixelCount(self, count)
 
 
-    def userPaint(self, data):
+    def userPaint(self, playerId, data):
         """ Sent by a remote client to indicate he/she has painted
         some onto the avatar. """
 
-        player = self.cr.doId2do.get(self.cr.getAvatarIdFromSender())
+        player = self.cr.doId2do.get(playerId)
         color = (0, 0, 0)
         if player:
             color = player.color
@@ -423,7 +424,20 @@ class TagAvatar(DistributedSmoothNode):
 
     def setZoneInformation(self, zoneId, visZones):
         """ The AI is telling us what zone we want to be in. """
-        self.cr.setInterestZones([1, 2, zoneId] + visZones)
-        self.cr.setObjectZone(self, zoneId)
+
+        #self.cr.setInterestZones([1, 2, zoneId] + visZones)
+        if self.cr.zoneInterest:
+            self.cr.alterInterest(self.cr.zoneInterest, self.cr.timeManager.doId, zoneId, 'zone interest')
+        else:
+            self.cr.zoneInterest = self.cr.addInterest(self.cr.timeManager.doId, zoneId, 'zone interest')
+
+        if self.cr.visInterest:
+            self.cr.alterInterest(self.cr.visInterest, self.cr.timeManager.doId, visZones, 'visible interest')
+        else:
+            self.cr.visInterest = self.cr.addInterest(self.cr.timeManager.doId, visZones, 'visible interest')
+
+        self.cr.locateAvatar(zoneId)
     
-        
+class TagAvatarOV(DistributedObjectOV):
+    def __init__(self, cr):
+        DistributedObjectOV.__init__(self, cr)

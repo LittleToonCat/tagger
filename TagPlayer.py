@@ -1,4 +1,5 @@
 from direct.distributed.DistributedObject import DistributedObject
+from direct.distributed.DistributedObjectOV import DistributedObjectOV
 from pandac.PandaModules import *
 import Globals
 import math
@@ -77,6 +78,7 @@ class TagPlayer(DistributedObject):
         player."""
 
         self.localPlayer = True
+        messenger.send('gotLocalPlayer')
 
     def getName(self):
         return self.name
@@ -272,3 +274,8 @@ class TagPlayer(DistributedObject):
     def b_setPoster(self, posterData):
         self.setPoster(posterData)
         self.d_setPoster(posterData)
+
+class TagPlayerOV(DistributedObjectOV):
+    def __init__(self, cr):
+        DistributedObjectOV.__init__(self, cr)
+

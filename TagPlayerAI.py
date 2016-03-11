@@ -12,7 +12,7 @@ class TagPlayerAI(DistributedObjectAI):
         DistributedObjectAI.__init__(self, air)
         self.name = None
         self.color = None
-        self.score = None
+        self.score = 0
         self.artBonus = 0
         self.game = None
         self.gameId = 0
@@ -44,7 +44,6 @@ class TagPlayerAI(DistributedObjectAI):
 
     def announceGenerate(self):
         DistributedObjectAI.announceGenerate(self)
-        messenger.send('newPlayer', [self])
 
         self.updateScoreTask = taskMgr.doMethodLater(0.5, self.__updateScore, 'updateScore')
 
@@ -67,6 +66,9 @@ class TagPlayerAI(DistributedObjectAI):
     def setName(self, name):
         self.name = name
 
+    def getName(self):
+        return self.name
+
     def setColor(self, color):
         self.color = color
 
@@ -76,14 +78,33 @@ class TagPlayerAI(DistributedObjectAI):
                                             int(color[1] * 255),
                                             int(color[2] * 255))
 
+    def getColor(self):
+        return self.color
+
     def setGameId(self, gameId):
         self.gameId = gameId
+
+    def getGameId(self):
+        return self.gameId
 
     def setAvId(self, avId):
         self.avId = avId
 
+    def d_setAvId(self, avId):
+        self.sendUpdate('setAvId', [avId])
+
+    def b_setAvId(self, avId):
+        self.setAvId(avId)
+        self.d_setAvId(avId)
+
+    def getAvId(self):
+        return self.avId
+
     def setScore(self, score):
         self.score = score
+
+    def getScore(self):
+        return self.score
 
     def __updateScore(self, task):
         """ Computes the new score after pixel counts have

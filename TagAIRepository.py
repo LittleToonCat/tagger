@@ -31,6 +31,8 @@ class TagAIRepository(AstronInternalRepository):
 
         self.managerId = self.allocateChannel()
 
+        self.zoneAllocator = UniqueIdAllocator(3, 1000000)
+
         tcpPort = base.config.GetInt('ai-server-port', 7190)
         hostname = base.config.GetString('ai-server-host', '127.0.0.1')
         self.acceptOnce('airConnected', self.connectSuccess)
@@ -40,11 +42,13 @@ class TagAIRepository(AstronInternalRepository):
     def connectSuccess(self):
         """ Successfully connected to the Message Director.
             Now to generate the TagManagerAI """
-        print 'Connected to MD'
+        print 'Connected successfully!'
 
         self.timeManager = TagManagerAI(self)
         self.timeManager.generateWithRequiredAndId(self.managerId, self.GameGlobalsId, 1)
-        #self.accept('createReady', self.gotCreateReady)
+        self.timeManager.setAI(self.ourChannel)
+        self.districtId = self.timeManager.doId
+        #self.makeGame()
 
     def lostConnection(self):
         # This should be overridden by a derived class to handle an
@@ -52,35 +56,21 @@ class TagAIRepository(AstronInternalRepository):
         self.notify.warning("Lost connection to gameserver.")
         sys.exit()
 
-    def gotCreateReady(self):
-        """ Now we're ready to go! """
-        if not self.haveCreateAuthority():
-            # Not ready yet.
-            return
-
-        self.ignore('createReady')
-
-        # Put the TagManager in zone 1 where the clients can find it.
-        self.timeManager = self.createDistributedObject(
-            className = 'TagManagerAI', zoneId = 1)
-
-        #self.makeGame(self.allocateDoId())
-
-    def makeGame(self, doId, playerIds = [], prevMaze = None):
+    def makeGame(self, playerIds = [], prevMaze = None):
         # Create a TagGame and place it in zone 2 for players to find
         # it and join it.
 
         game = TagGameAI(self)
-        game.doId = doId
+        game.generateWithRequired(2)
         game.generateMaze(playerIds, prevMaze = prevMaze)
-        self.createDistributedObject(
-            distObj = game, zoneId = 2, doId = doId, reserveDoId = False)
 
         self.games.append(game)
 
+        return game.doId
+
         # Listen for players in all of our games' objZone.
-        zoneIds = map(lambda g: g.objZone, self.games)
-        self.setInterestZones(zoneIds)
+        #zoneIds = map(lambda g: g.objZone, self.games)
+        #self.setInterestZones(zoneIds)
 
     def __checkPosters(self, task):
         """ This task runs every few seconds to see if someone has
@@ -123,4 +113,6 @@ class TagAIRepository(AstronInternalRepository):
             player.b_setPoster(posterData)
 
         return task.again
-    
+
+    def getAvatarIdFromSender(self):
+        return self.getMsgSender() & 0xFFFFFFFFL

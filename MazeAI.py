@@ -37,8 +37,8 @@ class MazeAI(DistributedObjectAI):
         if self.map:
             for row in self.map:
                 for cell in row:
-                    self.air.sendDeleteMsg(cell.doId)
                     self.air.zoneAllocator.free(cell.zoneId)
+                    cell.requestDelete()
 
     def generateMaze(self, xsize, ysize, 
                      prevMaze = None, seed = None):
@@ -56,9 +56,9 @@ class MazeAI(DistributedObjectAI):
             row = []
             for sx in range(self.xsize):
                 zoneId = self.air.zoneAllocator.allocate()
-                cell = self.air.createDistributedObject(
-                    className = 'CellAI', zoneId = zoneId)
+                cell = CellAI(self.air)
                 cell.setGeometry(Globals.AllDirs, sx, sy)
+                cell.generateWithRequired(zoneId)
                 row.append(cell)
             self.map.append(row)
 

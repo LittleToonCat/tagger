@@ -1,4 +1,6 @@
 from direct.distributed.DistributedObjectUD import DistributedObjectUD
+from direct.distributed.PyDatagram import PyDatagram
+from direct.distributed.MsgTypes import *
 
 class TagAvatarManagerUD(DistributedObjectUD):
 
@@ -8,7 +10,14 @@ class TagAvatarManagerUD(DistributedObjectUD):
         DistributedObjectUD.__init__(self, air)
         self.air = air
 
-    def requestAvatar(self, name):
+    def requestAccess(self):
         clientId = self.air.getMsgSender()
-        print 'Got requestAvatar from %d: %s' % (clientId, name)
         
+        self.air.setClientState(clientId, 2)
+
+        dg = PyDatagram()
+        dg.addServerHeader(clientId, self.air.ourChannel, CLIENTAGENT_OPEN_CHANNEL)
+        dg.addChannel(self.GetPuppetConnectionChannel(clientId))
+        self.air.send(dg)
+
+        self.sendUpdateToChannel(clientId, 'accessResponse', [True])
