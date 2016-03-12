@@ -193,7 +193,7 @@ class TagGameAI(DistributedObjectAI):
 
             # Immediately start up a new game.  Assume the players in this
             # game will be joining the next game.
-            self.nextGameId = self.air.allocateDoId()
+            self.nextGameId = self.air.allocateChannel()
             taskMgr.add(self.air.makeGame, 'makeGame',
                         extraArgs = [self.nextGameId, self.playerIds, self.maze])
             
@@ -243,6 +243,10 @@ class TagGameAI(DistributedObjectAI):
             # This should no longer be the suggested game.
             self.air.timeManager.chooseSuggestedGame(self.doId)
 
+        player = self.air.doId2do.get(clientId)
+        if player:
+            self.newPlayer(player)
+
     def requestPlayer(self, name, color):
         clientId = self.air.getAvatarIdFromSender()
 
@@ -253,6 +257,8 @@ class TagGameAI(DistributedObjectAI):
         player.generateWithRequired(self.objZone)
 
         self.air.setOwner(player.doId, clientId)
+
+        self.air.clientAddSessionObject(clientId, player.doId)
 
         dg = PyDatagram()
         dg.addServerHeader(clientId, self.air.ourChannel, CLIENTAGENT_SET_CLIENT_ID)

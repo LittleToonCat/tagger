@@ -47,7 +47,7 @@ class TagAIRepository(AstronInternalRepository):
         self.timeManager = TagManagerAI(self)
         self.timeManager.generateWithRequiredAndId(self.managerId, self.GameGlobalsId, 1)
         self.timeManager.setAI(self.ourChannel)
-        self.districtId = self.timeManager.doId
+        self.districtId = self.timeManager.doId # Default parent for future objects to generate to.
         #self.makeGame()
 
     def lostConnection(self):
@@ -56,17 +56,20 @@ class TagAIRepository(AstronInternalRepository):
         self.notify.warning("Lost connection to gameserver.")
         sys.exit()
 
-    def makeGame(self, playerIds = [], prevMaze = None):
+    def makeGame(self, doId = None, playerIds = [], prevMaze = None):
         # Create a TagGame and place it in zone 2 for players to find
         # it and join it.
 
         game = TagGameAI(self)
-        game.generateWithRequired(2)
+        if doId:
+            game.generateWithRequiredAndId(doId, self.districtId, 2)
+        else:
+            game.generateWithRequired(2)
         game.generateMaze(playerIds, prevMaze = prevMaze)
 
         self.games.append(game)
-
-        return game.doId
+        if not doId:
+            return game.doId
 
         # Listen for players in all of our games' objZone.
         #zoneIds = map(lambda g: g.objZone, self.games)

@@ -45,6 +45,8 @@ class TagAvatarAI(DistributedSmoothNodeAI):
         """ This message is sent whenever any TagPlayerAI is deleted. """
         if player in self.paintedOnMe:
             del self.paintedOnMe[player]
+        if self.playerId == player.doId:
+            self.requestDelete()
 
     def announceGenerate(self):
         DistributedSmoothNodeAI.announceGenerate(self)

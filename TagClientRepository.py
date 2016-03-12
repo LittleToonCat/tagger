@@ -477,6 +477,7 @@ class TagClientRepository(ClientRepositoryBase):
     def localPlayerGenerated(self, player):
         self.player = player
         self.player.setupLocalPlayer(self)
+        self.player.setPoster(self.posterData)
     
     def locateAvatar(self, zoneId):
         if self.av:
@@ -529,7 +530,8 @@ class TagClientRepository(ClientRepositoryBase):
         self.game = game
         self.objInterest = self.addInterest(self.timeManager.doId, self.game.objZone, 'game objects')
 
-        self.game.d_requestPlayer()
+        if not self.player:
+            self.game.d_requestPlayer()
 
         # Manifest a player.  The player always has our "base" doId.
         #self.player = TagPlayer(self, name = self.playerName,
@@ -556,12 +558,12 @@ class TagClientRepository(ClientRepositoryBase):
             self.nextGameId = self.game.nextGameId
             self.game.cleanup()
             self.game = None
-        if self.av:
-            self.sendDeleteMsg(self.av.doId)
-            self.av = None
-        if self.player:
-            self.sendDeleteMsg(self.player.doId)
-            self.player = None
+        #if self.av:
+        #    self.sendDeleteMsg(self.av.doId)
+        #    self.av = None
+        #if self.player:
+        #    self.sendDeleteMsg(self.player.doId)
+        #    self.player = None
 
         self.waitForGame()
 
@@ -612,6 +614,7 @@ class TagClientRepository(ClientRepositoryBase):
         game.d_requestJoin()
 
     def enterMaze(self, maze):
+        self.ignore(self.uniqueName('enterMaze'))
         # We've got a maze.
         self.maze = maze
         #self.setInterestZones([1, 2])
@@ -698,9 +701,9 @@ class TagClientRepository(ClientRepositoryBase):
 
         # Manifest an avatar for ourselves.
         if self.av:
-            self.sendDeleteMsg(self.av.doId)
-            self.av = None
-        self.game.d_requestAvatar(self.player.doId)
+            self.localAvatarGenerated(self.av)
+        else:
+            self.game.d_requestAvatar(self.player.doId)
 
         #self.av = TagAvatar(self, playerId = self.player.doId)
         #x = random.uniform(0, maze.xsize * Globals.MazeScale)
@@ -714,7 +717,6 @@ class TagClientRepository(ClientRepositoryBase):
 
     def localAvatarGenerated(self, av):
         self.av = av
-        print self.maze
         x = random.uniform(0, self.maze.xsize * Globals.MazeScale)
         y = random.uniform(0, self.maze.ysize * Globals.MazeScale)
         h = random.uniform(0, 360)
@@ -1083,7 +1085,6 @@ class TagClientRepository(ClientRepositoryBase):
 
         assert not self.gotMusic
         self.musicTrackFilename = 'models/' + Globals.MusicTrack
-        print "Music filename = %s" % (self.musicTrackFilename)
         self.gotMusic = True
         messenger.send('gotMusic')
 
