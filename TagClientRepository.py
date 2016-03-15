@@ -277,8 +277,8 @@ class TagClientRepository(ClientRepositoryBase):
         self.accept('control-escape', self.exit)
 
     def exit(self):
-        if self.gotMusic:
-            self.musicTrackFilename.unlink()
+        #if self.gotMusic:
+        #    self.musicTrackFilename.unlink()
 
         if self.isConnected():
             self.sendDisconnect()
@@ -361,6 +361,8 @@ class TagClientRepository(ClientRepositoryBase):
             self.handleGenerateOwner(di, True)
         elif msgType == CLIENT_OBJECT_LEAVING:
             self.handleDelete(di)
+        elif msgType == CLIENT_EJECT:
+            self.handleGoGetLost(di)
 
     def handleHelloResp(self):
         self.startHeartbeat()
